@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from werewolf import schemas
+from werewolf.schemas import schema_in, schema_out
 from werewolf.models import User
 from werewolf.api import deps
 # from werewolf.core.config import settings
@@ -29,18 +29,18 @@ router = APIRouter()
 #     return users
 
 
-@router.post("/register", response_model=schemas.ResponseBase)
+@router.post("/create", response_model=schema_out.ResponseBase)
 def create_user(
     *,
     db: Session = Depends(deps.get_db),
-    user_in: schemas.UserCreate,
-    current_user: User = Depends(deps.get_current_active_user),
+    user_in: schema_in.UserCreate,
 ) -> Any:
     """
     Create new user.
     """
-    new_user = User(username=user_in.username, hashed_password=get_password_hash(user_in.password),
-                    nickname=user_in.nickname, avatar=1, gid=-1)
+    new_user = User(**{k: v for k, v in user_in.dict().items() if k != 'password'})
+    new_user.hashed_password = get_password_hash(user_in.password)
+    new_user.gid = -1
     try:
         db.add(new_user)
         db.commit()

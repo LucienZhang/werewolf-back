@@ -1,4 +1,4 @@
-from datetime import datetime
+# from datetime import datetime
 from sqlalchemy import Column, Integer, DateTime
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 
@@ -14,7 +14,7 @@ class Game(Base):
     witch_mode = Column(EnumType, nullable=False)
     wolf_mode = Column(EnumType, nullable=False)
     end_time = Column(DateTime, nullable=False)
-    updated_on = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # updated_on = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     players = Column(MutableList.as_mutable(JSONEncodedType(225)), nullable=False)
     cards = Column(MutableList.as_mutable(JSONEncodedType(1023)), nullable=False)
     days = Column(Integer, nullable=False)

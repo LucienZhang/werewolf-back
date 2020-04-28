@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from werewolf.models import User
-from werewolf.schemas import Token
+from werewolf.schemas.token import Token
 from . import deps
 from werewolf.core import security
 from werewolf.core.config import settings
