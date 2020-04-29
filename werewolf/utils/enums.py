@@ -2,9 +2,9 @@ from enum import Enum, unique
 
 
 @unique
-class GameEnum(int, Enum):
+class GameEnum(Enum):
     def __new__(cls, value, label):
-        obj = int.__new__(cls, value)
+        obj = object.__new__(cls)
         obj._value_ = value
         obj.label = label
         return obj

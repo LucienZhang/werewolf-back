@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from werewolf.schemas import schema_in, schema_out
-from werewolf.models import User
+from werewolf.models import User, Role
 from werewolf.api import deps
 # from werewolf.core.config import settings
 from werewolf.core.security import get_password_hash
@@ -33,7 +33,7 @@ router = APIRouter()
 def create_user(
     *,
     db: Session = Depends(deps.get_db),
-    user_in: schema_in.UserCreate,
+    user_in: schema_in.UserCreateIn,
 ) -> Any:
     """
     Create new user.
@@ -45,13 +45,31 @@ def create_user(
         db.add(new_user)
         db.commit()
     except IntegrityError:
+        db.rollback()
         raise HTTPException(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
 
+    new_role = Role(uid=new_user.uid, nickname=new_user.nickname, avatar=new_user.avatar, gid=-1)
+    new_role.reset()
+    db.add(new_role)
+    db.commit()
+
     return GameEnum.OK.digest()
 
+
+@router.get("/check_username", response_model=schema_out.ResponseBase)
+def check_username(
+    *,
+    db: Session = Depends(deps.get_db),
+    username: str,
+):
+    user = db.query(User.uid).filter_by(username=username).first()
+    if user:
+        return GameEnum.GAME_MESSAGE_USER_EXISTS.digest()
+    else:
+        return GameEnum.OK.digest()
 
 # @router.put("/me", response_model=schemas.User)
 # def update_user_me(

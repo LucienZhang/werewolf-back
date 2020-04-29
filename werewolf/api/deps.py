@@ -22,6 +22,7 @@ def get_db() -> Generator:
         db = SessionLocal()
         yield db
         # db.commit()  commit manually for what warranted
+        db.rollback()  # to ensure releasing the lock
     except SQLAlchemyError:
         db.rollback()
         raise
