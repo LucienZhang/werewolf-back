@@ -1,20 +1,50 @@
-# from fastapi import FastAPI
+from fastapi import FastAPI
 
-# from werewolf.api.api_v1.api import api_router
-# from app.core.config import settings
+from werewolf.api import api_router
+# from werewolf.api.websocket import broadcaster, init_websocket
+from werewolf.core.config import settings
 
-# app = FastAPI(
-#     title=settings.PROJECT_NAME, openapi_url=f"{settings.API_V1_STR}/openapi.json"
-# )
 
-# # Set all CORS enabled origins
-# if settings.BACKEND_CORS_ORIGINS:
-#     app.add_middleware(
-#         CORSMiddleware,
-#         allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
-#         allow_credentials=True,
-#         allow_methods=["*"],
-#         allow_headers=["*"],
-#     )
+app = FastAPI()
+app.include_router(api_router, prefix=settings.API_PREFIX)
 
-# app.include_router(api_router, prefix=settings.API_V1_STR)
+# init_websocket(app)
+
+
+# @app.on_event("startup")
+# async def startup_event():
+#     await broadcaster.connect()
+
+
+# @app.on_event("shutdown")
+# async def shutdown_event():
+#     await broadcaster.disconnect()
+
+
+# ###
+# # test
+# ###
+
+# from starlette.templating import Jinja2Templates
+# templates = Jinja2Templates("templates")
+
+
+# @app.get("/test")
+# async def test(request: Request):
+#     template = "index.html"
+#     context = {"request": request}
+#     return templates.TemplateResponse(template, context)
+
+
+# @app.get("/send/{msg}")
+# async def send(msg: str):
+#     import json
+#     message = json.dumps({"action": 'message', "user": "god", "message": msg})
+#     await broadcaster.publish(channel="chatroom", message=message)
+
+# from werewolf.api.deps import get_current_active_user
+# from fastapi import Depends
+# from werewolf.models import User
+# @app.get("/users/me")
+# async def read_items(current_user: User = Depends(get_current_active_user)):
+#     return {"gid": current_user.gid}
