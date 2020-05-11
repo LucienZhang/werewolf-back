@@ -39,3 +39,14 @@ class GameBase(BaseModel):
     # steps: Optional[] = None
     # history: Optional[] = None
     captain_pos: Optional[int] = None
+    seat_cnt: Optional[int] = None
+
+
+class RoleBase(BaseModel):
+    role_type: Optional[GameEnum] = None
+    alive: Optional[bool] = None
+    ishost: Optional[bool] = None
+    voteable: Optional[bool] = None
+    speakable: Optional[bool] = None
+    skills: Optional[List[GameEnum]] = None
+    nickname: Optional[str] = None

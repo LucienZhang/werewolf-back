@@ -71,6 +71,19 @@ def check_username(
     else:
         return GameEnum.OK.digest()
 
+
+@router.get("/info", response_model=schema_out.UserInfoOut)
+def info(
+    *,
+    current_user: User = Depends(deps.get_current_active_user),
+):
+    info = {
+        'nickname': current_user.nickname,
+        'avatar': current_user.avatar,
+        'gid': current_user.gid
+    }
+    return GameEnum.OK.digest(user=info)
+
 # @router.put("/me", response_model=schemas.User)
 # def update_user_me(
 #     *,

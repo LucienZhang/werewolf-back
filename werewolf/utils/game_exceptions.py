@@ -1,0 +1,2 @@
+class GameFinished(Exception):
+    pass

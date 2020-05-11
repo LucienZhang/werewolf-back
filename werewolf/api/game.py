@@ -1,6 +1,7 @@
 # from typing import Any
 from datetime import datetime
 import random
+import json
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 from werewolf.schemas import schema_in, schema_out
 from werewolf.models import User, Game, Role
 from werewolf.api import deps
+from werewolf.websocket.websocket import publish_info
 # from werewolf.core.config import settings
 from werewolf.utils.enums import GameEnum
 
@@ -132,5 +134,64 @@ def deal(
         p.role_type = c
         p.prepare(game.captain_mode)
     db.commit()
-    # publish_info(game.gid, json.dumps({'cards': True}))
+    publish_info(game.gid, json.dumps({'cards': True}))
     return GameEnum.OK.digest()
+
+
+@router.get("/info", response_model=schema_out.GameInfoOut, response_model_exclude_unset=True)
+def info(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+):
+    game = db.query(Game).get(current_user.gid)
+    if not game:
+        return GameEnum.GAME_MESSAGE_NOT_IN_GAME.digest()
+    all_players = db.query(Role).filter(Role.gid == game.gid).limit(len(game.players)).all()
+    role = db.query(Role).get(current_user.uid)
+    return GameEnum.OK.digest(
+        game={
+            'players': [{'pos': p.position, 'nickname': p.nickname, 'avatar': p.avatar} for p in all_players],
+            'status': game.status,
+            'seat_cnt': game.get_seats_cnt()
+        },
+        role={
+            'role_type': role.role_type,
+            'skills': role.skills,
+        })
+
+
+@router.get("/sit", response_model=schema_out.ResponseBase)
+def sit(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+    position: int
+):
+    game = db.query(Game).get(current_user.gid)
+    if game.status is not GameEnum.GAME_STATUS_WAIT_TO_START:
+        return GameEnum.GAME_MESSAGE_ALREADY_STARTED.digest()
+    my_role = db.query(Role).get(current_user.uid)
+    my_role.position = position
+    db.commit()
+    all_players = Role.query.filter(Role.gid == game.gid).limit(len(game.players)).all()
+    publish_info(game.gid, json.dumps(
+        GameEnum.OK.digest(
+            seats={p.position: [p.nickname, p.avatar] for p in all_players},
+        )
+    ))
+    return GameEnum.OK.digest()
+
+
+@router.get("/next_step", response_model=schema_out.ResponseBase)
+def next_step(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+):
+    game = db.query(Game).with_for_update().get(current_user.gid)
+    if game.status not in [GameEnum.GAME_STATUS_READY, GameEnum.GAME_STATUS_DAY]:
+        return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
+    ret = game.move_on(db)
+    db.commit()
+    return ret

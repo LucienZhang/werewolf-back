@@ -133,3 +133,6 @@ class GameEnum(Enum):
     GAME_STATUS_DAY = (1403, '白天')
     GAME_STATUS_NIGHT = (1404, '夜晚')
     # GAME_STATUS_FINISHED = (1405, '游戏已结束')
+
+    # 1500
+    CONNECTION_WS_4001_NOT_IN_GAME = (1500, 4001)

@@ -11,6 +11,7 @@ python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
+# python-socketio
 #requests
 
 
