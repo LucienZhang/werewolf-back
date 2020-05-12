@@ -83,7 +83,7 @@ class Broadcaster:
                 await queue.put(event)
 
     async def publish(self, channel: str, message: typing.Any) -> None:
-        await self._backend.publish(channel, message)
+        await self._backend.publish(str(channel), message)
 
     @asynccontextmanager
     async def subscribe(self, channel: str) -> 'Subscriber':
@@ -97,12 +97,13 @@ class Broadcaster:
                 self._subscribers[channel].add(queue)
             logging.info(f'Start subscribe channel:{channel}')
             yield Subscriber(queue)
+        finally:
             logging.info(f'Finish subscribe channel:{channel}')
             self._subscribers[channel].remove(queue)
             if not self._subscribers.get(channel):
                 del self._subscribers[channel]
                 await self._backend.unsubscribe(channel)
-        finally:
+            logging.debug('quiting queue')
             await queue.put(None)
 
 

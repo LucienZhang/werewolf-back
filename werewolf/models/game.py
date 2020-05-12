@@ -107,13 +107,18 @@ class Game(Base):
                 step_flag = self._enter_step()
             instruction_string = self.get_instruction_string()
             if instruction_string:
-                publish_info(self.gid, json.dumps({'next_step': instruction_string}))
+                publish_info(self.gid, json.dumps({
+                    'game': {
+                        'next_step': instruction_string
+                    },
+                    'mutation': 'GAME'
+                }))
         except GameFinished:
             pass  # todo game finished
         return GameEnum.OK.digest()
 
     def _leave_step(self, db: Session) -> ResponseBase:
-        now = self._current_step()
+        now = self.current_step()
         if now is None:
             return GameEnum.OK.digest()
         if now is GameEnum.TURN_STEP_ELECT:
@@ -255,7 +260,7 @@ class Game(Base):
         return GameEnum.OK.digest()
 
     def _enter_step(self, db: Session) -> GameEnum:
-        now = self._current_step()
+        now = self.current_step()
         if now is GameEnum.TURN_STEP_TURN_NIGHT:
             self.status = GameEnum.GAME_STATUS_NIGHT
             for d in self.history['dying']:
@@ -263,7 +268,13 @@ class Game(Base):
                 role.alive = False
             self._reset_history()
             publish_music(self.gid, 'night_start_voice', 'night_bgm', True)
-            publish_info(self.gid, json.dumps({'days': self.days, 'game_status': self.status.label}))
+            publish_info(self.gid, json.dumps({
+                'game': {
+                    'days': self.days,
+                    'status': self.status.label
+                },
+                'mutation': 'GAME'
+            }))
             publish_history(self.gid,
                             (
                                 '***************************\n'
@@ -328,7 +339,13 @@ class Game(Base):
             self.status = GameEnum.GAME_STATUS_DAY
             publish_music(self.gid, 'day_start_voice', 'day_bgm', False)
             self._calculate_die_in_night(db)
-            publish_info(self.gid, json.dumps({'days': self.days, 'game_status': self.status.label}))
+            publish_info(self.gid, json.dumps({
+                'game': {
+                    'days': self.days,
+                    'status': self.status.label
+                },
+                'mutation': 'GAME'
+            }))
             return GameEnum.STEP_FLAG_AUTO_MOVE_ON
         elif now is GameEnum.ROLE_TYPE_SEER:
             publish_music(self.gid, 'seer_start_voice', 'seer_bgm', True)
@@ -339,7 +356,7 @@ class Game(Base):
                 # todo
                 # scheduler.add_job(id=f'{self.gid}_SEER_{self.step_cnt}', func=Game._timeout_move_on,
                 #                   args=(self.gid, self.step_cnt),
-                #                   next_run_time=datetime.now() + timedelta(seconds=random.randint(GameEnum.GAME_TIMEOUT_RANDOM_FROM.label, GameEnum.GAME_TIMEOUT_RANDOM_TO.label)))
+                #                   next_run_time=datetime.now() + timedelta(seconds=random.randint(GameEnum.GAME_TIMEOUT_RANDOM_FROM.label, GameEnum.GAME_TIMEOUT_RANDOM_TO.label)))  # noqa E501
             return GameEnum.STEP_FLAG_WAIT_FOR_ACTION
         elif now is GameEnum.ROLE_TYPE_WITCH:
             publish_music(self.gid, 'witch_start_voice', 'witch_bgm', True)
@@ -350,7 +367,7 @@ class Game(Base):
                 # todo
                 # scheduler.add_job(id=f'{self.gid}_WITCH_{self.step_cnt}', func=Game._timeout_move_on,
                 #                   args=(self.gid, self.step_cnt),
-                #                   next_run_time=datetime.now() + timedelta(seconds=random.randint(GameEnum.GAME_TIMEOUT_RANDOM_FROM.label, GameEnum.GAME_TIMEOUT_RANDOM_TO.label)))
+                #                   next_run_time=datetime.now() + timedelta(seconds=random.randint(GameEnum.GAME_TIMEOUT_RANDOM_FROM.label, GameEnum.GAME_TIMEOUT_RANDOM_TO.label)))  # noqa E501
             return GameEnum.STEP_FLAG_WAIT_FOR_ACTION
         elif now is GameEnum.ROLE_TYPE_SAVIOR:
             publish_music(self.gid, 'savior_start_voice', 'savior_bgm', True)
@@ -361,10 +378,10 @@ class Game(Base):
                 # todo
                 # scheduler.add_job(id=f'{self.gid}_SAVIOR', func=Game._timeout_move_on,
                 #                   args=(self.gid, self.step_cnt),
-                #                   next_run_time=datetime.now() + timedelta(seconds=random.randint(GameEnum.GAME_TIMEOUT_RANDOM_FROM.label, GameEnum.GAME_TIMEOUT_RANDOM_TO.label)))
+                #                   next_run_time=datetime.now() + timedelta(seconds=random.randint(GameEnum.GAME_TIMEOUT_RANDOM_FROM.label, GameEnum.GAME_TIMEOUT_RANDOM_TO.label)))  # noqa E501
             return GameEnum.STEP_FLAG_WAIT_FOR_ACTION
 
-    def _current_step(self) -> GameEnum:
+    def current_step(self) -> GameEnum:
         if self.now_index < 0 or self.now_index >= len(self.steps):
             return None
         else:
@@ -397,7 +414,7 @@ class Game(Base):
         return
 
     def get_instruction_string(self) -> str:
-        now = self._current_step()
+        now = self.current_step()
         if now in [GameEnum.TURN_STEP_TALK, GameEnum.TURN_STEP_PK_TALK, GameEnum.TURN_STEP_ELECT_TALK, GameEnum.TURN_STEP_ELECT_PK_TALK]:
             return '结束发言'
 
@@ -468,7 +485,7 @@ class Game(Base):
         return
 
     def _check_win(self, db: Session):
-        # groups = db.query(Role).with_entities(Role.group_type, func.count(Role.group_type)).filter(Role.gid == self.gid, Role.alive == int(True)).group_by(Role.group_type).all()
+        # groups = db.query(Role).with_entities(Role.group_type, func.count(Role.group_type)).filter(Role.gid == self.gid, Role.alive == int(True)).group_by(Role.group_type).all()  # noqa E501
         # groups = {g: cnt for g, cnt in groups}
 
         players = db.query(Role).with_entities(Role.position, Role.group_type).filter(Role.gid == self.gid, Role.alive == int(True)).all()
@@ -555,3 +572,9 @@ class Game(Base):
     #         with db.query(Game).with_for_update().get(gid) as game:
     #             if step_cnt != game.step_cnt:
     #                 return game._move_on()
+
+    def get_role_by_pos(self, db, pos) -> Role:
+        if pos < 0:
+            return None
+        uid = self.players[pos - 1]
+        return db.query(Role).get(uid)

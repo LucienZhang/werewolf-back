@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from werewolf.api import api_router
@@ -39,22 +39,22 @@ async def shutdown_event():
 # test
 ###
 
-from starlette.templating import Jinja2Templates
-templates = Jinja2Templates("templates")
+# from starlette.templating import Jinja2Templates
+# templates = Jinja2Templates("templates")
 
 
-@app.get("/test")
-async def test(request: Request):
-    template = "index.html"
-    context = {"request": request}
-    return templates.TemplateResponse(template, context)
+# @app.get("/test")
+# async def test(request: Request):
+#     template = "index.html"
+#     context = {"request": request}
+#     return templates.TemplateResponse(template, context)
 
 
-@app.get("/send/{gid}/{msg}")
-async def send(msg: str, gid: str):
-    import json
-    message = json.dumps({"action": 'message', "user": "god", "message": msg})
-    await broadcaster.publish(channel=gid, message=message)
+# @app.get("/send/{gid}/{msg}")
+# async def send(msg: str, gid: str):
+#     import json
+#     message = json.dumps({"action": 'message', "user": "god", "message": msg})
+#     await broadcaster.publish(channel=gid, message=message)
 
 # from werewolf.api.deps import get_current_active_user
 # from fastapi import Depends
