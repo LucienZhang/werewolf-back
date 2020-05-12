@@ -103,7 +103,7 @@ class Game(Base):
                 self.days += 1
                 self._init_steps()
 
-            step_flag = self._enter_step()
+            step_flag = self._enter_step(db)
         instruction_string = self.get_instruction_string()
         if instruction_string:
             publish_info(self.gid, json.dumps({

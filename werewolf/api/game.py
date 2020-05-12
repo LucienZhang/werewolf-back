@@ -137,8 +137,9 @@ async def deal(
         p.prepare(game.captain_mode)
     db.commit()
     publish_info(game.gid, json.dumps({
-        'action': 'getUserInfo'
+        'action': 'getGameInfo'
     }))
+    publish_history(game.gid, "身份牌已发放")
     return GameEnum.OK.digest()
 
 
