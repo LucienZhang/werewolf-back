@@ -1,11 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from starlette.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
 
 from werewolf.api import api_router
 # from werewolf.api.sio import sio_app
 from werewolf.websocket.websocket import broadcaster, init_websocket
 from werewolf.core.config import settings
-
+from werewolf.utils.game_exceptions import GameFinished
+from werewolf.utils.enums import GameEnum
+from werewolf.db.session import SessionLocal
+from werewolf.websocket.websocket import publish_history
+from werewolf.models import Game, Role
 
 app = FastAPI()
 
@@ -33,6 +38,31 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     await broadcaster.disconnect()
+
+
+@app.middleware("http")
+async def process(request: Request, call_next):
+    try:
+        response = await call_next(request)
+    except GameFinished as e:
+        try:
+            db = SessionLocal()
+            publish_history(e.gid, f'游戏结束，{e.winner.label}胜利')
+            game = db.query(Game).with_for_update().get(e.gid)
+            game.status = GameEnum.GAME_STATUS_FINISHED
+            original_players = game.players
+            game.init_game()
+            game.players = original_players
+            all_players = db.query(Role).filter(Role.gid == game.gid).all()
+            for p in all_players:
+                p.reset()
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            raise
+        finally:
+            db.close()
+    return response
 
 
 ###

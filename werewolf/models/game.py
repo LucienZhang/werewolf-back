@@ -90,31 +90,31 @@ class Game(Base):
         return cnt
 
     def move_on(self, db: Session) -> ResponseBase:
-        try:
-            step_flag = GameEnum.STEP_FLAG_AUTO_MOVE_ON
-            while step_flag is GameEnum.STEP_FLAG_AUTO_MOVE_ON:
-                leave_result = self._leave_step(db)
-                if leave_result['code'] != GameEnum.OK.value:
-                    return leave_result
+        step_flag = GameEnum.STEP_FLAG_AUTO_MOVE_ON
+        while step_flag is GameEnum.STEP_FLAG_AUTO_MOVE_ON:
+            leave_result = self._leave_step(db)
+            if leave_result['code'] != GameEnum.OK.value:
+                return leave_result
 
-                self.step_cnt += 1
-                self.now_index += 1
-                if self.now_index >= len(self.steps):
-                    self.now_index = 0
-                    self.days += 1
-                    self._init_steps()
+            self.step_cnt += 1
+            self.now_index += 1
+            if self.now_index >= len(self.steps):
+                self.now_index = 0
+                self.days += 1
+                self._init_steps()
 
-                step_flag = self._enter_step()
-            instruction_string = self.get_instruction_string()
-            if instruction_string:
-                publish_info(self.gid, json.dumps({
-                    'game': {
-                        'next_step': instruction_string
-                    },
-                    'mutation': 'GAME'
-                }))
-        except GameFinished:
-            pass  # todo game finished
+            step_flag = self._enter_step()
+        instruction_string = self.get_instruction_string()
+        if instruction_string:
+            publish_info(self.gid, json.dumps({
+                'game': {
+                    'next_step': instruction_string
+                },
+                'mutation': 'SOCKET_GAME'
+            }))
+        # try:
+        # except GameFinished:
+        #     pass  # todo game finished
         return GameEnum.OK.digest()
 
     def _leave_step(self, db: Session) -> ResponseBase:
@@ -266,14 +266,14 @@ class Game(Base):
             for d in self.history['dying']:
                 role = db.query(Role).filter(Role.gid == self.gid, Role.position == d).limit(1).first()
                 role.alive = False
-            self._reset_history()
+            self.reset_history()
             publish_music(self.gid, 'night_start_voice', 'night_bgm', True)
             publish_info(self.gid, json.dumps({
                 'game': {
                     'days': self.days,
                     'status': self.status.label
                 },
-                'mutation': 'GAME'
+                'mutation': 'SOCKET_GAME'
             }))
             publish_history(self.gid,
                             (
@@ -344,7 +344,7 @@ class Game(Base):
                     'days': self.days,
                     'status': self.status.label
                 },
-                'mutation': 'GAME'
+                'mutation': 'SOCKET_GAME'
             }))
             return GameEnum.STEP_FLAG_AUTO_MOVE_ON
         elif now is GameEnum.ROLE_TYPE_SEER:
@@ -495,76 +495,76 @@ class Game(Base):
                 groups[g] += 1
 
         if GameEnum.GROUP_TYPE_WOLVES not in groups:
-            publish_history(self.gid, '游戏结束，好人阵营胜利')
-            # self.status = GameEnum.GAME_STATUS_FINISHED
-            original_players = self.players
-            self._init_game()
-            self.players = original_players
-            all_players = db.query(Role).filter(Role.gid == self.gid).all()
-            for p in all_players:
-                p.reset()
-            raise GameFinished()
+            # publish_history(self.gid, '游戏结束，好人阵营胜利')
+            # # self.status = GameEnum.GAME_STATUS_FINISHED
+            # original_players = self.players
+            # self._init_game()
+            # self.players = original_players
+            # all_players = db.query(Role).filter(Role.gid == self.gid).all()
+            # for p in all_players:
+            #     p.reset()
+            raise GameFinished(self.gid, GameEnum.GROUP_TYPE_GOOD)
 
         if self.victory_mode is GameEnum.VICTORY_MODE_KILL_GROUP and (GameEnum.GROUP_TYPE_GODS not in groups or GameEnum.GROUP_TYPE_VILLAGERS not in groups):  # noqa E501
-            publish_history(self.gid, '游戏结束，狼人阵营胜利')
-            # self.status = GameEnum.GAME_STATUS_FINISHED
-            original_players = self.players
-            self._init_game()
-            self.players = original_players
-            all_players = db.query(Role).filter(Role.gid == self.gid).all()
-            for p in all_players:
-                p.reset()
-            raise GameFinished()
+            # publish_history(self.gid, '游戏结束，狼人阵营胜利')
+            # # self.status = GameEnum.GAME_STATUS_FINISHED
+            # original_players = self.players
+            # self._init_game()
+            # self.players = original_players
+            # all_players = db.query(Role).filter(Role.gid == self.gid).all()
+            # for p in all_players:
+            #     p.reset()
+            raise GameFinished(self.gid, GameEnum.GROUP_TYPE_WOLVES)
 
         if GameEnum.GROUP_TYPE_GODS not in groups and GameEnum.GROUP_TYPE_VILLAGERS not in groups:
-            publish_history(self.gid, '游戏结束，狼人阵营胜利')
-            # self.status = GameEnum.GAME_STATUS_FINISHED
-            original_players = self.players
-            self._init_game()
-            self.players = original_players
-            all_players = db.query(Role).filter(Role.gid == self.gid).all()
-            for p in all_players:
-                p.reset()
-            raise GameFinished()
+            # publish_history(self.gid, '游戏结束，狼人阵营胜利')
+            # # self.status = GameEnum.GAME_STATUS_FINISHED
+            # original_players = self.players
+            # self._init_game()
+            # self.players = original_players
+            # all_players = db.query(Role).filter(Role.gid == self.gid).all()
+            # for p in all_players:
+            #     p.reset()
+            raise GameFinished(self.gid, GameEnum.GROUP_TYPE_WOLVES)
 
-    def _reset_history(self):
-        """
-            pos: -1=no one, -2=not acted
-            {
-                'wolf_kill':{wolf_pos:target_pos,...},
-                'wolf_kill_decision':pos,
-                'elixir':True / False,
-                'guard':pos,
-                'toxic':pos,
-                'discover':pos,
-                'voter_votee':[[voter_pos,...],[votee_pos,...]],
-                'vote_result': {voter_pos:votee_pos,...},
-                'dying':{pos:True},
-            }
-        """
-        self.history = {
-            'wolf_kill': {},
-            'wolf_kill_decision': GameEnum.TARGET_NOT_ACTED.value,
-            'elixir': False,
-            'guard': GameEnum.TARGET_NOT_ACTED.value,
-            'toxic': GameEnum.TARGET_NOT_ACTED.value,
-            'discover': GameEnum.TARGET_NOT_ACTED.value,
-            'voter_votee': [[], []],
-            'vote_result': {},
-            'dying': {},
-        }
+    # def _reset_history(self):
+    #     """
+    #         pos: -1=no one, -2=not acted
+    #         {
+    #             'wolf_kill':{wolf_pos:target_pos,...},
+    #             'wolf_kill_decision':pos,
+    #             'elixir':True / False,
+    #             'guard':pos,
+    #             'toxic':pos,
+    #             'discover':pos,
+    #             'voter_votee':[[voter_pos,...],[votee_pos,...]],
+    #             'vote_result': {voter_pos:votee_pos,...},
+    #             'dying':{pos:True},
+    #         }
+    #     """
+    #     self.history = {
+    #         'wolf_kill': {},
+    #         'wolf_kill_decision': GameEnum.TARGET_NOT_ACTED.value,
+    #         'elixir': False,
+    #         'guard': GameEnum.TARGET_NOT_ACTED.value,
+    #         'toxic': GameEnum.TARGET_NOT_ACTED.value,
+    #         'discover': GameEnum.TARGET_NOT_ACTED.value,
+    #         'voter_votee': [[], []],
+    #         'vote_result': {},
+    #         'dying': {},
+    #     }
 
-    def _init_game(self):
-        self.status = GameEnum.GAME_STATUS_WAIT_TO_START
-        self.end_time = datetime.utcnow() + timedelta(days=1)
-        self.days = 0
-        self.now_index = -1
-        self.step_cnt = 0
-        self.steps = []
-        self.history = {}
-        self.captain_pos = -1
-        self.players = []
-        self._reset_history()
+    # def _init_game(self):
+    #     self.status = GameEnum.GAME_STATUS_WAIT_TO_START
+    #     self.end_time = datetime.utcnow() + timedelta(days=1)
+    #     self.days = 0
+    #     self.now_index = -1
+    #     self.step_cnt = 0
+    #     self.steps = []
+    #     self.history = {}
+    #     self.captain_pos = -1
+    #     self.players = []
+    #     self._reset_history()
 
     # @staticmethod
     # def _timeout_move_on(gid, step_cnt):

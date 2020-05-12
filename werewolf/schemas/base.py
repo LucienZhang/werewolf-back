@@ -25,9 +25,9 @@ class GameBase(BaseModel):
     gid: Optional[int] = None
     host_uid: Optional[int] = None
     status: Optional[GameEnum] = None
-    victory_mode: Optional[GameEnum] = None
-    captain_mode: Optional[GameEnum] = None
-    witch_mode: Optional[GameEnum] = None
+    victoryMode: Optional[GameEnum] = None
+    captainMode: Optional[GameEnum] = None
+    witchMode: Optional[GameEnum] = None
     wolf_mode: Optional[GameEnum] = None
     end_time: Optional[datetime] = None
     # updated_on :Optional[]=None

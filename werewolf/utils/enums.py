@@ -58,10 +58,11 @@ class GameEnum(Enum):
     ROLE_TYPE_ANGEL = (419, '天使')
     # 500
     GROUP_TYPE_UNKNOWN = (500, '未知阵营')
-    GROUP_TYPE_WOLVES = (501, '狼人阵营')
+    GROUP_TYPE_WOLVES = (501, '狼人')
     GROUP_TYPE_GODS = (502, '神阵营')
     GROUP_TYPE_VILLAGERS = (503, '民阵营')
-    GROUP_TYPE_THIRD_PARTY = (504, '第三方势力')
+    GROUP_TYPE_THIRD_PARTY = (504, '第三方阵营')
+    GROUP_TYPE_GOOD = (505, '好人')
     # 600
     TURN_STEP_UNKNOWN = (600, '未知阶段')
     TURN_STEP_DEAL = (601, '发牌')

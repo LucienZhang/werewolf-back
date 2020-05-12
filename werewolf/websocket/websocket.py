@@ -37,7 +37,7 @@ async def info_ws_sender(websocket, channel):
     try:
         async with broadcaster.subscribe(channel=str(channel)) as subscriber:
             async for event in subscriber:
-                await websocket.send_json(event.message)
+                await websocket.send_text(event.message)
             logging.debug('Finishing sender')
     except asyncio.CancelledError:
         logging.log(f'sender with channel={channel} canceled')
@@ -95,7 +95,7 @@ def publish_history(channel, message, show=True):
     publish_info(channel, json.dumps({
         'history': message,
         'show': show,
-        'mutation': 'HISTORY'
+        'mutation': 'SOCKET_HISTORY'
     }))
 
 
@@ -104,5 +104,5 @@ def publish_music(channel, instruction, bgm, bgm_loop):
         'instruction': instruction,
         'bgm': bgm,
         'bgm_loop': bgm_loop,
-        'mutation': 'AUDIO'
+        'mutation': 'SOCKET_AUDIO'
     }))

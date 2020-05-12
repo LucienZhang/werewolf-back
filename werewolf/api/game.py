@@ -14,7 +14,7 @@ from werewolf.api import deps
 from werewolf.websocket.websocket import publish_info, publish_history
 # from werewolf.core.config import settings
 from werewolf.utils.enums import GameEnum
-from werewolf.utils.game_exceptions import GameFinished
+# from werewolf.utils.game_exceptions import GameFinished
 
 router = APIRouter()
 
@@ -136,7 +136,9 @@ async def deal(
         p.role_type = c
         p.prepare(game.captain_mode)
     db.commit()
-    publish_info(game.gid, json.dumps({'cards': True}))
+    publish_info(game.gid, json.dumps({
+        'action': 'getUserInfo'
+    }))
     return GameEnum.OK.digest()
 
 
@@ -157,7 +159,10 @@ async def info(
             'days': game.days,
             'players': [{'pos': p.position, 'nickname': p.nickname, 'avatar': p.avatar} for p in all_players],
             'status': game.status,
-            'seat_cnt': game.get_seats_cnt()
+            'seat_cnt': game.get_seats_cnt(),
+            'victoryMode': game.victory_mode,
+            'captainMode': game.captain_mode,
+            'witchMode': game.witch_mode,
         },
         role={
             'role_type': role.role_type,
@@ -184,9 +189,12 @@ async def sit(
     db.commit()
     all_players = db.query(Role).filter(Role.gid == game.gid).limit(len(game.players)).all()
     players = [{'pos': p.position, 'nickname': p.nickname, 'avatar': p.avatar} for p in all_players]
-    publish_info(game.gid, json.dumps(
-        GameEnum.OK.digest(players=players,)
-    ))
+    publish_info(game.gid, json.dumps({
+        'game': {
+            'players': players
+        },
+        'mutation': 'SOCKET_GAME'
+    }))
     return GameEnum.OK.digest()
 
 
@@ -304,6 +312,8 @@ async def elect(
     if choice == 'quit' and (GameEnum.TAG_ELECT not in my_role.tags or GameEnum.TAG_GIVE_UP_ELECT in my_role.tags):
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
 
+    ret = None
+
     if choice == 'yes':
         my_role.tags.append(GameEnum.TAG_ELECT)
     elif choice == 'no':
@@ -320,11 +330,11 @@ async def elect(
             captain_pos = votee[0]
             game.captain_pos = captain_pos
             publish_history(game.gid, f'仅剩一位警上玩家，{captain_pos}号玩家自动当选警长')
-            game.move_on(db)
+            ret = game.move_on(db)
     else:
         raise ValueError(f'Unknown choice: {choice}')
     db.commit()
-    return GameEnum.OK.digest()
+    return ret or GameEnum.OK.digest()
 
 
 @router.get("/wolf_kill", response_model=schema_out.ResponseBase)
@@ -542,10 +552,10 @@ async def shoot(
             return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
         my_role.args['shootable'] = False
     publish_history(game.gid, f'{my_role.position}号玩家发动技能“枪击”，击倒了{target}号玩家')
-    try:
-        game._kill(db, target, GameEnum.SKILL_SHOOT)
-    except GameFinished:
-        pass  # todo game finished, or global except?
+    game._kill(db, target, GameEnum.SKILL_SHOOT)
+    # try:
+    # except GameFinished:
+    #     pass  # todo game finished, or global except?
     db.commit()
     return GameEnum.OK.digest()
 
@@ -566,9 +576,10 @@ async def suicide(
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
     game.steps = []
     publish_history(game.gid, f'{my_role.position}号玩家自爆了')
-    try:
-        game._kill(db, my_role.position, GameEnum.SKILL_SUICIDE)
-    except GameFinished:
-        pass  # todo game finished, or global except?
-    game.move_on(db)
+    game._kill(db, my_role.position, GameEnum.SKILL_SUICIDE)
+    # try:
+    # except GameFinished:
+    #     pass  # todo game finished, or global except?
+    ret = game.move_on(db)
     db.commit()
+    return ret
