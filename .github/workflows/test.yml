@@ -1,0 +1,44 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+  release:
+    types:
+      - published
+      - created
+      - edited
+      - prereleased
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    # - name: Set up Redis
+    #   uses: zhulik/redis-action@1.1.0
+
+    # - name: Test with pytest
+    #   run: |
+    #     pip install pytest
+    #     pytest
