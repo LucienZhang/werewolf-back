@@ -22,7 +22,7 @@ asyncio_redis
 # sqlalchemy
 # mysqlclient==1.4.6
 # flask-login==0.4.1
-# gunicorn==20.0.4
+gunicorn==20.0.4
 # gevent==1.4.0
 # flask-sse==0.2.1
 # Flask-APScheduler==1.11.0

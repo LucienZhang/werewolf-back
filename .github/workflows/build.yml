@@ -6,7 +6,7 @@ on:
       - published
       # - created
       # - edited
-      - prereleased
+      # - prereleased
 
 jobs:
   build:

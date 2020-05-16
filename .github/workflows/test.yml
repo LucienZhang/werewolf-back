@@ -11,9 +11,9 @@ on:
   release:
     types:
       - published
-      - created
-      - edited
-      - prereleased
+      # - created
+      # - edited
+      # - prereleased
 
 jobs:
   test:
