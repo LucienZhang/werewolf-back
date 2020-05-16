@@ -5,5 +5,6 @@ ENV LANG en_US.UTF-8
 
 COPY . .
 VOLUME [ "/data/project/werewolf/instance" ]
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 CMD [ "gunicorn", "werewolf:create_app()", "-c", "./werewolf/instance/gunicorn.conf.py" ]
