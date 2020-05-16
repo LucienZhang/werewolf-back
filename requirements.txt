@@ -1,6 +1,6 @@
 # python==3.7.7
 uvicorn
-fastapi
+fastapi==0.54.1
 sqlalchemy
 mysqlclient
 # async-exit-stack
@@ -11,6 +11,7 @@ python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
+alembic
 # python-socketio
 #requests
 
