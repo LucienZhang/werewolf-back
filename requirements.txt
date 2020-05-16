@@ -12,6 +12,7 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
 alembic
+asyncio_redis
 # python-socketio
 #requests
 
