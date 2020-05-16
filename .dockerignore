@@ -11,6 +11,15 @@ Dockerfile
 .github
 
 
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
 # https://github.com/github/gitignore/blob/master/Global/Windows.gitignore
 
 # Windows thumbnail cache files
