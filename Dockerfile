@@ -4,7 +4,8 @@ ENV PYTHONIOENCODING utf-8
 ENV LANG en_US.UTF-8
 
 COPY . .
-VOLUME [ "/data/project/werewolf/instance" ]
+VOLUME [ "/data/project/gunicorn.conf.py" ]
+VOLUME [ "/data/project/.env" ]
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
-CMD [ "gunicorn", "werewolf:create_app()", "-c", "./werewolf/instance/gunicorn.conf.py" ]
+CMD [ "gunicorn", "werewolf:app", "-c", "./gunicorn.conf.py" ]
