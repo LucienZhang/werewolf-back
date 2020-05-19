@@ -5,6 +5,7 @@ import collections
 import logging
 import random
 from sqlalchemy import Column, Integer, DateTime
+from sqlalchemy import func
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import Session
 from werewolf.utils.enums import GameEnum
@@ -271,7 +272,7 @@ class Game(Base):
             publish_info(self.gid, json.dumps({
                 'game': {
                     'days': self.days,
-                    'status': self.status.label
+                    'status': self.status.value
                 },
                 'mutation': 'SOCKET_GAME'
             }))
@@ -342,15 +343,15 @@ class Game(Base):
             publish_info(self.gid, json.dumps({
                 'game': {
                     'days': self.days,
-                    'status': self.status.label
+                    'status': self.status.value
                 },
                 'mutation': 'SOCKET_GAME'
             }))
             return GameEnum.STEP_FLAG_AUTO_MOVE_ON
         elif now is GameEnum.ROLE_TYPE_SEER:
             publish_music(self.gid, 'seer_start_voice', 'seer_bgm', True)
-            seer_cnt = db.query(db.func.count(Role.uid)).filter(Role.gid == self.gid, Role.alive == int(True),
-                                                                Role.role_type == GameEnum.ROLE_TYPE_SEER).scalar()
+            seer_cnt = db.query(func.count(Role.uid)).filter(Role.gid == self.gid, Role.alive == int(True),
+                                                             Role.role_type == GameEnum.ROLE_TYPE_SEER).scalar()
             if seer_cnt == 0:
                 pass
                 # todo
@@ -360,8 +361,8 @@ class Game(Base):
             return GameEnum.STEP_FLAG_WAIT_FOR_ACTION
         elif now is GameEnum.ROLE_TYPE_WITCH:
             publish_music(self.gid, 'witch_start_voice', 'witch_bgm', True)
-            witch_cnt = db.query(db.func.count(Role.uid)).filter(Role.gid == self.gid, Role.alive == int(True),
-                                                                 Role.role_type == GameEnum.ROLE_TYPE_WITCH).scalar()
+            witch_cnt = db.query(func.count(Role.uid)).filter(Role.gid == self.gid, Role.alive == int(True),
+                                                              Role.role_type == GameEnum.ROLE_TYPE_WITCH).scalar()
             if witch_cnt == 0:
                 pass
                 # todo
@@ -371,8 +372,8 @@ class Game(Base):
             return GameEnum.STEP_FLAG_WAIT_FOR_ACTION
         elif now is GameEnum.ROLE_TYPE_SAVIOR:
             publish_music(self.gid, 'savior_start_voice', 'savior_bgm', True)
-            savior_cnt = db.query(db.func.count(Role.uid)).filter(Role.gid == self.gid, Role.alive == int(True),
-                                                                  Role.role_type == GameEnum.ROLE_TYPE_SAVIOR).scalar()
+            savior_cnt = db.query(func.count(Role.uid)).filter(Role.gid == self.gid, Role.alive == int(True),
+                                                               Role.role_type == GameEnum.ROLE_TYPE_SAVIOR).scalar()
             if savior_cnt == 0:
                 pass
                 # todo
@@ -503,7 +504,7 @@ class Game(Base):
             # all_players = db.query(Role).filter(Role.gid == self.gid).all()
             # for p in all_players:
             #     p.reset()
-            raise GameFinished(self.gid, GameEnum.GROUP_TYPE_GOOD)
+            raise GameFinished(self.gid, GameEnum.GROUP_TYPE_GOOD, db)
 
         if self.victory_mode is GameEnum.VICTORY_MODE_KILL_GROUP and (GameEnum.GROUP_TYPE_GODS not in groups or GameEnum.GROUP_TYPE_VILLAGERS not in groups):  # noqa E501
             # publish_history(self.gid, '游戏结束，狼人阵营胜利')
@@ -514,7 +515,7 @@ class Game(Base):
             # all_players = db.query(Role).filter(Role.gid == self.gid).all()
             # for p in all_players:
             #     p.reset()
-            raise GameFinished(self.gid, GameEnum.GROUP_TYPE_WOLVES)
+            raise GameFinished(self.gid, GameEnum.GROUP_TYPE_WOLVES, db)
 
         if GameEnum.GROUP_TYPE_GODS not in groups and GameEnum.GROUP_TYPE_VILLAGERS not in groups:
             # publish_history(self.gid, '游戏结束，狼人阵营胜利')
@@ -525,7 +526,7 @@ class Game(Base):
             # all_players = db.query(Role).filter(Role.gid == self.gid).all()
             # for p in all_players:
             #     p.reset()
-            raise GameFinished(self.gid, GameEnum.GROUP_TYPE_WOLVES)
+            raise GameFinished(self.gid, GameEnum.GROUP_TYPE_WOLVES, db)
 
     # def _reset_history(self):
     #     """

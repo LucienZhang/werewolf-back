@@ -164,6 +164,7 @@ async def info(
             'victoryMode': game.victory_mode,
             'captainMode': game.captain_mode,
             'witchMode': game.witch_mode,
+            'next_step': game.get_instruction_string()
         },
         role={
             'role_type': role.role_type,
@@ -225,8 +226,10 @@ async def vote(
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
     game = db.query(Game).with_for_update().get(current_user.gid)
     if not my_role.voteable or my_role.position not in game.history['voter_votee'][0]:
+        logging.debug(f"voteable:{my_role.voteable},my position:{my_role.position},voter:{game.history['voter_votee'][0]}")
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
     if target != GameEnum.TARGET_NO_ONE.value and target not in game.history['voter_votee'][1]:
+        logging.debug(f"target position:{my_role.position},votee:{game.history['voter_votee'][1]}")
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
     if target > 0:
         target_role = game.get_role_by_pos(db, target)
@@ -566,7 +569,6 @@ async def suicide(
     *,
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
-    target: int
 ):
     my_role = db.query(Role).get(current_user.uid)
     if not my_role.alive:

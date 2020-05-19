@@ -8,7 +8,6 @@ from werewolf.websocket.websocket import broadcaster, init_websocket
 from werewolf.core.config import settings
 from werewolf.utils.game_exceptions import GameFinished
 from werewolf.utils.enums import GameEnum
-from werewolf.db.session import SessionLocal
 from werewolf.websocket.websocket import publish_history
 from werewolf.models import Game, Role
 
@@ -46,7 +45,8 @@ async def process(request: Request, call_next):
         response = await call_next(request)
     except GameFinished as e:
         try:
-            db = SessionLocal()
+            db = e.db
+            db.commit()
             publish_history(e.gid, f'游戏结束，{e.winner.label}胜利')
             game = db.query(Game).with_for_update().get(e.gid)
             game.status = GameEnum.GAME_STATUS_FINISHED
@@ -62,6 +62,7 @@ async def process(request: Request, call_next):
             raise
         finally:
             db.close()
+            return GameEnum.OK.digest()
     return response
 
 

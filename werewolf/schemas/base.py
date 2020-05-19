@@ -40,6 +40,7 @@ class GameBase(BaseModel):
     # history: Optional[] = None
     captain_pos: Optional[int] = None
     seat_cnt: Optional[int] = None
+    next_step: Optional[str] = None
 
 
 class RoleBase(BaseModel):

@@ -6,6 +6,7 @@ from typing import Optional
 class ResponseBase(BaseModel):
     code: int
     msg: str
+    result: Optional[str]
 
 
 class GameCreateOut(ResponseBase):

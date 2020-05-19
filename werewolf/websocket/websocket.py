@@ -26,8 +26,8 @@ async def run_until_first_complete(*args: typing.Tuple[typing.Callable, dict]) -
     tasks = [asyncio.create_task(handler(**kwargs)) for handler, kwargs in args]
     (done, pending) = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
     logging.debug('first finished')
-    logging.debug('done', done)
-    logging.debug('pending', pending)
+    logging.debug('done', len(done))
+    logging.debug('pending', len(pending))
     [task.cancel() for task in pending]
     [task.result() for task in done]
     logging.debug('task done!')
@@ -40,7 +40,7 @@ async def info_ws_sender(websocket, channel):
                 await websocket.send_text(event.message)
             logging.debug('Finishing sender')
     except asyncio.CancelledError:
-        logging.log(f'sender with channel={channel} canceled')
+        logging.debug(f'sender with channel={channel} canceled')
         raise
 
 
@@ -101,8 +101,12 @@ def publish_history(channel, message, show=True):
 
 def publish_music(channel, instruction, bgm, bgm_loop):
     publish_info(channel, json.dumps({
-        'instruction': instruction,
-        'bgm': bgm,
-        'bgm_loop': bgm_loop,
+        'bgm': {
+            'file': bgm,
+            'loop': bgm_loop
+        },
+        'instruction': {
+            'file': instruction,
+        },
         'mutation': 'SOCKET_AUDIO'
     }))
