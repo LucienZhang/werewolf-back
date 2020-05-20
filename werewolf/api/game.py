@@ -275,7 +275,7 @@ async def handover(
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
     game = db.query(Game).with_for_update().get(current_user.gid)
     now = game.current_step()
-    if now not in [GameEnum.TURN_STEP_LAST_WORDS, GameEnum.TURN_STEP_ANNOUNCE]:
+    if now is not GameEnum.TURN_STEP_USE_SKILLS:
         logging.info(f'wrong now step:{now.label}')
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
     if str(my_role.position) not in game.history['dying']:
@@ -439,7 +439,6 @@ async def elixir(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
 ):
-    # todo save self
     my_role = db.query(Role).get(current_user.uid)
     if not my_role.alive:
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
@@ -454,6 +453,12 @@ async def elixir(
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
     if history['wolf_kill_decision'] == GameEnum.TARGET_NO_ONE.value:
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
+    if history['wolf_kill_decision'] == my_role.position:
+        if game.witch_mode is GameEnum.WITCH_MODE_CANNOT_SAVE_SELF:
+            return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
+        elif game.witch_mode is GameEnum.WITCH_MODE_FIRST_NIGHT_ONLY and game.days != 1:
+            return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
+
     history['elixir'] = True
     my_role.args['elixir'] = False
     db.commit()
@@ -546,20 +551,17 @@ async def shoot(
     game = db.query(Game).with_for_update().get(current_user.gid)
     now = game.current_step()
 
-    if now not in [GameEnum.TURN_STEP_LAST_WORDS, GameEnum.TURN_STEP_ANNOUNCE]:
+    if now is not GameEnum.TURN_STEP_USE_SKILLS:
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
     if not my_role.args['shootable'] or str(my_role.position) not in game.history['dying']:
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
     if target > 0:
         target_role = game.get_role_by_pos(db, target)
-        if not target_role.alive:
+        if not target_role.alive or str(target) in game.history['dying']:
             return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
         my_role.args['shootable'] = False
     publish_history(game.gid, f'{my_role.position}号玩家发动技能“枪击”，击倒了{target}号玩家')
     game._kill(db, target, GameEnum.SKILL_SHOOT)
-    # try:
-    # except GameFinished:
-    #     pass  # todo game finished, or global except?
     db.commit()
     return GameEnum.OK.digest()
 
@@ -577,7 +579,16 @@ async def suicide(
 
     if game.status is not GameEnum.GAME_STATUS_DAY:
         return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
-    game.steps = []
+    now = game.current_step()
+    if now not in [GameEnum.TURN_STEP_ELECT_TALK, GameEnum.TURN_STEP_TALK]:
+        return GameEnum.GAME_MESSAGE_CANNOT_ACT.digest()
+
+    if now is GameEnum.TURN_STEP_ELECT_TALK:
+        game.steps = [GameEnum.TURN_STEP_UNKNOWN, GameEnum.TURN_STEP_ANNOUNCE, GameEnum.TURN_STEP_USE_SKILLS]
+        game.now_index = 0
+    elif now is GameEnum.TURN_STEP_TALK:
+        game.steps = [GameEnum.TURN_STEP_UNKNOWN, GameEnum.TURN_STEP_USE_SKILLS]
+        game.now_index = 0
     publish_history(game.gid, f'{my_role.position}号玩家自爆了')
     game._kill(db, my_role.position, GameEnum.SKILL_SUICIDE)
     # try:

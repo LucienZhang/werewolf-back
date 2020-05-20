@@ -26,8 +26,8 @@ async def run_until_first_complete(*args: typing.Tuple[typing.Callable, dict]) -
     tasks = [asyncio.create_task(handler(**kwargs)) for handler, kwargs in args]
     (done, pending) = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
     logging.debug('first finished')
-    logging.debug('done', len(done))
-    logging.debug('pending', len(pending))
+    logging.debug('done ' + str(done))
+    logging.debug('pending ' + str(pending))
     [task.cancel() for task in pending]
     [task.result() for task in done]
     logging.debug('task done!')
@@ -50,7 +50,7 @@ async def info_ws_heartbeat(websocket):
             await asyncio.wait_for(websocket.receive_json(), settings.HEARTBEAT_TIMEOUT)
             logging.debug('heartbeat')
     except (asyncio.TimeoutError, WebSocketDisconnect, JSONDecodeError) as err:
-        logging.debug('Finishing heartbeat', err)
+        logging.debug('Finishing heartbeat ' + str(err))
 
 
 def init_websocket(app):

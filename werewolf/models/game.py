@@ -212,7 +212,7 @@ class Game(Base):
                 return GameEnum.OK.digest()
             else:
                 # 平票
-                if now in [GameEnum.TURN_STEP_VOTE, GameEnum.TURN_STEP_ELECT_VOTE]:
+                if now in [GameEnum.TURN_STEP_VOTE, GameEnum.TURN_STEP_ELECT_VOTE]:  # todo 全体进入PK
                     if now is GameEnum.TURN_STEP_VOTE:
                         self.steps.insert(self.now_index + 1, GameEnum.TURN_STEP_PK_TALK)
                         self.steps.insert(self.now_index + 2, GameEnum.TURN_STEP_PK_VOTE)
@@ -252,6 +252,12 @@ class Game(Base):
             publish_music(self.gid, 'savior_end_voice', None, False)
             return GameEnum.OK.digest()
         elif now is GameEnum.TURN_STEP_ANNOUNCE:
+            # for d in self.history['dying']:
+            #     role = db.query(Role).filter(Role.gid == self.gid, Role.position == d).limit(1).first()
+            #     role.alive = False
+            # self.history['dying'] = {}
+            pass
+        elif now is GameEnum.TURN_STEP_USE_SKILLS:
             for d in self.history['dying']:
                 role = db.query(Role).filter(Role.gid == self.gid, Role.position == d).limit(1).first()
                 role.alive = False
@@ -264,9 +270,9 @@ class Game(Base):
         now = self.current_step()
         if now is GameEnum.TURN_STEP_TURN_NIGHT:
             self.status = GameEnum.GAME_STATUS_NIGHT
-            for d in self.history['dying']:
-                role = db.query(Role).filter(Role.gid == self.gid, Role.position == d).limit(1).first()
-                role.alive = False
+            # for d in self.history['dying']:
+            #     role = db.query(Role).filter(Role.gid == self.gid, Role.position == d).limit(1).first()
+            #     role.alive = False
             self.reset_history()
             publish_music(self.gid, 'night_start_voice', 'night_bgm', True)
             publish_info(self.gid, json.dumps({
@@ -335,7 +341,7 @@ class Game(Base):
                 ))
             else:
                 publish_history(self.gid, "昨晚是平安夜")
-            return GameEnum.STEP_FLAG_WAIT_FOR_ACTION
+            return GameEnum.STEP_FLAG_AUTO_MOVE_ON
         elif now is GameEnum.TURN_STEP_TURN_DAY:
             self.status = GameEnum.GAME_STATUS_DAY
             publish_music(self.gid, 'day_start_voice', 'day_bgm', False)
@@ -408,8 +414,12 @@ class Game(Base):
             self.steps.append(GameEnum.TURN_STEP_ELECT_TALK)
             self.steps.append(GameEnum.TURN_STEP_ELECT_VOTE)
         self.steps.append(GameEnum.TURN_STEP_ANNOUNCE)
+        self.steps.append(GameEnum.TURN_STEP_USE_SKILLS)
+        if self.days == 1:
+            self.steps.append(GameEnum.TURN_STEP_LAST_WORDS)
         self.steps.append(GameEnum.TURN_STEP_TALK)
         self.steps.append(GameEnum.TURN_STEP_VOTE)
+        self.steps.append(GameEnum.TURN_STEP_USE_SKILLS)
         self.steps.append(GameEnum.TURN_STEP_LAST_WORDS)
 
         return

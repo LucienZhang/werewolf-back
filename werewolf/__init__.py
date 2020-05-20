@@ -39,31 +39,54 @@ async def shutdown_event():
     await broadcaster.disconnect()
 
 
-@app.middleware("http")
-async def process(request: Request, call_next):
+# @app.middleware("http")
+# async def process(request: Request, call_next):
+#     try:
+#         response = await call_next(request)
+#     except GameFinished as e:
+#         try:
+#             db = e.db
+#             db.commit()
+#             publish_history(e.gid, f'游戏结束，{e.winner.label}胜利')
+#             game = db.query(Game).with_for_update().get(e.gid)
+#             game.status = GameEnum.GAME_STATUS_FINISHED
+#             original_players = game.players
+#             game.init_game()
+#             game.players = original_players
+#             all_players = db.query(Role).filter(Role.gid == game.gid).all()
+#             for p in all_players:
+#                 p.reset()
+#             db.commit()
+#         except SQLAlchemyError:
+#             db.rollback()
+#             raise
+#         finally:
+#             db.close()
+#             return GameEnum.OK.digest()
+#     return response
+
+@app.exception_handler(GameFinished)
+async def game_finished_handler(request: Request, finish: GameFinished):
     try:
-        response = await call_next(request)
-    except GameFinished as e:
-        try:
-            db = e.db
-            db.commit()
-            publish_history(e.gid, f'游戏结束，{e.winner.label}胜利')
-            game = db.query(Game).with_for_update().get(e.gid)
-            game.status = GameEnum.GAME_STATUS_FINISHED
-            original_players = game.players
-            game.init_game()
-            game.players = original_players
-            all_players = db.query(Role).filter(Role.gid == game.gid).all()
-            for p in all_players:
-                p.reset()
-            db.commit()
-        except SQLAlchemyError:
-            db.rollback()
-            raise
-        finally:
-            db.close()
-            return GameEnum.OK.digest()
-    return response
+        db = finish.db
+        db.commit()
+        publish_history(finish.gid, f'游戏结束，{finish.winner.label}胜利')
+        game = db.query(Game).with_for_update().get(finish.gid)
+        game.status = GameEnum.GAME_STATUS_FINISHED
+        original_players = game.players
+        game.init_game()
+        game.players = original_players
+        all_players = db.query(Role).filter(Role.gid == game.gid).all()
+        for p in all_players:
+            p.reset()
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise
+    finally:
+        db.rollback()
+        db.close()
+    return GameEnum.OK.digest()
 
 
 ###

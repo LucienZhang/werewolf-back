@@ -79,6 +79,7 @@ class GameEnum(Enum):
     TURN_STEP_PK_VOTE = (612, 'PK投票')
     TURN_STEP_ANNOUNCE = (613, '公布结果')
     TURN_STEP_LAST_WORDS = (614, '遗言')
+    TURN_STEP_USE_SKILLS = (615, '使用技能')
 
     # 700
     GAME_MESSAGE_GAME_NOT_EXIST = (700, '房间不存在')
