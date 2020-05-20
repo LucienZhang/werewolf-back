@@ -7,6 +7,7 @@ import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 # from sqlalchemy.exc import IntegrityError
+from collections import Counter
 
 from werewolf.schemas import schema_in, schema_out
 from werewolf.models import User, Game, Role
@@ -164,7 +165,8 @@ async def info(
             'victoryMode': game.victory_mode,
             'captainMode': game.captain_mode,
             'witchMode': game.witch_mode,
-            'next_step': game.get_instruction_string()
+            'next_step': game.get_instruction_string(),
+            'cards': Counter(game.cards)
         },
         role={
             'role_type': role.role_type,

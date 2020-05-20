@@ -13,7 +13,7 @@
 
 ## Introduction
 
-This is an open source project for an online judge of game [*The Werewolves of Millers Hollow*](https://en.wikipedia.org/wiki/The_Werewolves_of_Millers_Hollow), this repo is the backend part, please find the frontend part [here](https://github.com/LucienZhang/werewolf-front).
+This is an open source project for an online judge of game [*The Werewolves of Millers Hollow*](https://en.wikipedia.org/wiki/The_Werewolves_of_Millers_Hollow), this repo is the backend part, please find the front-end part [here](https://github.com/LucienZhang/werewolf-front).
 
 To play this game, please visit [my game site](http://ziliang.red/werewolf/)
 
