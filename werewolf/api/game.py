@@ -159,8 +159,8 @@ async def info(
         game={
             'gid': game.gid,
             'days': game.days,
-            'players': [{'pos': p.position, 'nickname': p.nickname, 'avatar': p.avatar} for p in all_players],
-            'status': game.status,
+            'players': [{'pos': p.position, 'nickname': p.nickname, 'avatar': p.avatar, 'alive': p.alive} for p in all_players],
+            'status': game.current_step() if game.status in [GameEnum.GAME_STATUS_DAY, GameEnum.GAME_STATUS_NIGHT] else game.status,
             'seat_cnt': game.get_seats_cnt(),
             'victoryMode': game.victory_mode,
             'captainMode': game.captain_mode,
@@ -192,7 +192,7 @@ async def sit(
     my_role.position = position
     db.commit()
     all_players = db.query(Role).filter(Role.gid == game.gid).limit(len(game.players)).all()
-    players = [{'pos': p.position, 'nickname': p.nickname, 'avatar': p.avatar} for p in all_players]
+    players = [{'pos': p.position, 'nickname': p.nickname, 'avatar': p.avatar, 'alive': p.alive} for p in all_players]
     publish_info(game.gid, json.dumps({
         'game': {
             'players': players
@@ -463,6 +463,7 @@ async def elixir(
 
     history['elixir'] = True
     my_role.args['elixir'] = False
+    game.move_on(db)
     db.commit()
     return GameEnum.OK.digest(result=f'你使用了解药')
 

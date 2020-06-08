@@ -113,6 +113,12 @@ class Game(Base):
                 },
                 'mutation': 'SOCKET_GAME'
             }))
+        publish_info(self.gid, json.dumps({
+            'game': {
+                'status': self.current_step().value
+            },
+            'mutation': 'SOCKET_GAME'
+        }))
         # try:
         # except GameFinished:
         #     pass  # todo game finished
@@ -261,6 +267,10 @@ class Game(Base):
             for d in self.history['dying']:
                 role = db.query(Role).filter(Role.gid == self.gid, Role.position == d).limit(1).first()
                 role.alive = False
+                publish_info(self.gid, json.dumps({
+                    'pos': role.position,
+                    'mutation': 'SOCKET_PLAYER_OUT'
+                }))
             self.history['dying'] = {}
         else:
             return GameEnum.OK.digest()
@@ -278,7 +288,7 @@ class Game(Base):
             publish_info(self.gid, json.dumps({
                 'game': {
                     'days': self.days,
-                    'status': self.status.value
+                    # 'status': self.status.value
                 },
                 'mutation': 'SOCKET_GAME'
             }))
@@ -349,7 +359,7 @@ class Game(Base):
             publish_info(self.gid, json.dumps({
                 'game': {
                     'days': self.days,
-                    'status': self.status.value
+                    # 'status': self.status.value
                 },
                 'mutation': 'SOCKET_GAME'
             }))

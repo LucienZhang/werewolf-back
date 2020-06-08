@@ -64,7 +64,7 @@ class GameEnum(Enum):
     GROUP_TYPE_THIRD_PARTY = (504, '第三方阵营')
     GROUP_TYPE_GOOD = (505, '好人')
     # 600
-    TURN_STEP_UNKNOWN = (600, '未知阶段')
+    TURN_STEP_UNKNOWN = (600, '未知')
     TURN_STEP_DEAL = (601, '发牌')
     TURN_STEP_TURN_NIGHT = (602, '入夜')
     TURN_STEP_TURN_DAY = (603, '天亮')

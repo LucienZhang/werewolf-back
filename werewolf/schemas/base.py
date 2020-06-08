@@ -19,6 +19,7 @@ class Player(BaseModel):
     pos: int
     nickname: str
     avatar: int
+    alive: bool
 
 
 class GameBase(BaseModel):
