@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Request
+from fastapi.logger import logger
+import logging
 from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -10,6 +12,10 @@ from werewolf.utils.game_exceptions import GameFinished
 from werewolf.utils.enums import GameEnum
 from werewolf.websocket.websocket import publish_history
 from werewolf.models import Game, Role
+
+gunicorn_logger = logging.getLogger('gunicorn.error')
+logger.handlers = gunicorn_logger.handlers
+logger.setLevel(gunicorn_logger.level)
 
 app = FastAPI()
 
