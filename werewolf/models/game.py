@@ -238,7 +238,7 @@ class Game(Base):
                 else:
                     msg += '以下玩家以{}票再次平票：{}\n'.format(max_ticket, ','.join(map(str, most_voted)))
                     if now is GameEnum.TURN_STEP_PK_VOTE:
-                        msg += '今天是平安日，无人被公投出局'
+                        msg += '今日无人被公投出局'
                         while self.now_index + 1 < len(self.steps) and self.steps[self.now_index + 1] is GameEnum.TURN_STEP_LAST_WORDS:
                             self.steps.pop(self.now_index + 1)
                     else:
@@ -351,6 +351,8 @@ class Game(Base):
                 ))
             else:
                 publish_history(self.gid, "昨晚是平安夜")
+                while self.now_index + 1 < len(self.steps) and self.steps[self.now_index + 1] in [GameEnum.TURN_STEP_USE_SKILLS, GameEnum.TURN_STEP_LAST_WORDS]:  # noqa E501
+                    self.steps.pop(self.now_index + 1)
             return GameEnum.STEP_FLAG_AUTO_MOVE_ON
         elif now is GameEnum.TURN_STEP_TURN_DAY:
             self.status = GameEnum.GAME_STATUS_DAY
@@ -448,7 +450,7 @@ class Game(Base):
         if now is GameEnum.TURN_STEP_ELECT:
             return '结束上警'
 
-        if now is GameEnum.TURN_STEP_ANNOUNCE:
+        if now is GameEnum.TURN_STEP_USE_SKILLS:
             return '技能使用完毕'
 
         next_index = self.now_index + 1

@@ -118,7 +118,7 @@ class GameEnum(Enum):
     WOLF_MODE_ALL = (1001, '所有狼刀相同有效')
 
     # 1100
-    TAG_ATTACKABLE_WOLF = (1100, '带刀狼')
+    TAG_ATTACKABLE_WOLF = (1100, '带刀狼人')
 
     # 1200
     STEP_FLAG_AUTO_MOVE_ON = (1200, '自动下一步')
