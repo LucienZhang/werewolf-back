@@ -1,6 +1,6 @@
 # python==3.7.7
 uvicorn
-fastapi==0.54.1
+fastapi==0.65.2
 sqlalchemy
 mysqlclient
 # async-exit-stack
